@@ -1,11 +1,9 @@
 #include <MPU9250.h>
 #include <quaternionFilters.h>
-#include <SD.h>
 
 #include <Wire.h>
 
 MPU9250 myIMU;
-File myFile;
 
 // Power Management 1 is adress 0x01
 // WHO_AM_I is address 0x71
@@ -24,30 +22,6 @@ int myLed = 13;
 void setup() {
   Wire.begin();
   Serial.begin(38400);
-  Serial.print("Initializing SD card...");
-  // On the Ethernet Shield, CS is pin 4. It's set as an output by default.
-  // Note that even if it's not used as the CS pin, the hardware SS pin
-  // (10 on most Arduino boards, 53 on the Mega) must be left as an output
-  // or the SD library functions will not work.
-  pinMode(10, OUTPUT);
-
-  if (!SD.begin(10)) {
-    Serial.println("Initialization failed!");
-    return;
-  }
-  Serial.println("Initialization done.");
-
-  // open the file. note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-  myFile = SD.open("imuSensor.txt", FILE_WRITE);
-
-  if (myFile) {
-    Serial.print("Writing to imuSensor.txt");
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
-  }
-
   
   // Set up interrupt pin, active high, push-pull
   pinMode(intPin,INPUT);
@@ -57,24 +31,24 @@ void setup() {
 
   // Read WHO_AM_I register
   byte who_I2C = myIMU.readByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250);
-  myFile.println("who_I2C's address is ");
-  myFile.println(who_I2C,HEX);  // WHO_AM_I for MPU should always be 0x68, which is the I2C adress
+  Serial.print("who_I2C's address is ");
+  Serial.print(who_I2C,HEX);  // WHO_AM_I for MPU should always be 0x68, which is the I2C adress
 
   // Self test if WHO_AM_I not 0x68
   if (who_I2C == 0x71) {
     myIMU.MPU9250SelfTest(myIMU.selfTest);
-    myFile.println("x-axis self test: acceleration trim within : ");
-    myFile.println(myIMU.selfTest[0],1); myFile.println("% of factory value");
-    myFile.println("y-axis self test: acceleration trim within : ");
-    myFile.println(myIMU.selfTest[1],1); myFile.println("% of factory value");
-    myFile.println("z-axis self test: acceleration trim within : ");
-    myFile.println(myIMU.selfTest[2],1); myFile.println("% of factory value");
-    myFile.println("x-axis self test: gyration trim within : ");
-    myFile.println(myIMU.selfTest[3],1); myFile.println("% of factory value");
-    myFile.println("y-axis self test: gyration trim within : ");
-    myFile.println(myIMU.selfTest[4],1); myFile.println("% of factory value");
-    myFile.println("z-axis self test: gyration trim within : ");
-    myFile.println(myIMU.selfTest[5],1); myFile.println("% of factory value");
+    Serial.print("x-axis self test: acceleration trim within : ");
+    Serial.print(myIMU.selfTest[0],1); Serial.println("% of factory value");
+    Serial.print("y-axis self test: acceleration trim within : ");
+    Serial.print(myIMU.selfTest[1],1); Serial.println("% of factory value");
+    Serial.print("z-axis self test: acceleration trim within : ");
+    Serial.print(myIMU.selfTest[2],1); Serial.println("% of factory value");
+    Serial.print("x-axis self test: gyration trim within : ");
+    Serial.print(myIMU.selfTest[3],1); Serial.println("% of factory value");
+    Serial.print("y-axis self test: gyration trim within : ");
+    Serial.print(myIMU.selfTest[4],1); Serial.println("% of factory value");
+    Serial.print("z-axis self test: gyration trim within : ");
+    Serial.print(myIMU.selfTest[5],1); Serial.println("% of factory value");
 
     // Calibrate gyro and accelerometers, load biases in bias registers
     myIMU.calibrateMPU9250(myIMU.gyroBias, myIMU.accelBias);
@@ -83,31 +57,31 @@ void setup() {
  
   // Initialize device for active mode read 
   myIMU.initMPU9250();
-  myFile.println("MPU9250 initialized for active data mode....");
+  Serial.println("MPU9250 initialized for active data mode....");
 
   // Read the WHO_AM_I register of magnetometer --> should always be 0x48
   byte who_magnet = myIMU.readByte(AK8963_ADDRESS, WHO_AM_I_AK8963);
-  myFile.println("The (AK8963) magnetometer's address is: ");
-  myFile.println(who_magnet,HEX); 
+  Serial.print("The (AK8963) magnetometer's address is: ");
+  Serial.print(who_magnet,HEX); 
 
   // Initialize device for active mode read of magnetometer
   myIMU.initAK8963(myIMU.factoryMagCalibration);
-  myFile.println("AK8963 initialized for active data mode....");
+  Serial.println("AK8963 initialized for active data mode....");
   
   if (SerialDebug)
     {
-      //  myFile.println("Calibration values: ");
-      myFile.println("X-Axis sensitivity adjustment value ");
-      myFile.println(myIMU.factoryMagCalibration[0], 2);
-      myFile.println("Y-Axis sensitivity adjustment value ");
-      myFile.println(myIMU.factoryMagCalibration[1], 2);
-      myFile.println("Z-Axis sensitivity adjustment value ");
-      myFile.println(myIMU.factoryMagCalibration[2], 2);
+      //  Serial.println("Calibration values: ");
+      Serial.print("X-Axis sensitivity adjustment value ");
+      Serial.println(myIMU.factoryMagCalibration[0], 2);
+      Serial.print("Y-Axis sensitivity adjustment value ");
+      Serial.println(myIMU.factoryMagCalibration[1], 2);
+      Serial.print("Z-Axis sensitivity adjustment value ");
+      Serial.println(myIMU.factoryMagCalibration[2], 2);
     }
    else
   {
-    myFile.println("Could not connect to MPU9250: 0x");
-    myFile.println(who_magnet, HEX);
+    Serial.print("Could not connect to MPU9250: 0x");
+    Serial.println(who_magnet, HEX);
     while(1) ; // Loop forever if communication doesn't happen
   }
 }
@@ -169,7 +143,7 @@ void loop() {
   // along the x-axis just like in the LSM9DS0 sensor. This rotation can be
   // modified to allow any convenient orientation convention. This is ok by
   // aircraft orientation standards! Pass gyro rate as rad/s
-  //  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
+//  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
   MahonyQuaternionUpdate(myIMU.ax, myIMU.ay, myIMU.az, myIMU.gx*DEG_TO_RAD,
                          myIMU.gy*DEG_TO_RAD, myIMU.gz*DEG_TO_RAD, myIMU.my,
                          myIMU.mx, myIMU.mz, myIMU.deltat);
@@ -182,35 +156,35 @@ void loop() {
       if(SerialDebug)
       {
         // Print acceleration values in milligs!
-        myFile.println("X-acceleration: "); myFile.println(1000*myIMU.ax);
-        myFile.println(" mg ");
-        myFile.println("Y-acceleration: "); myFile.println(1000*myIMU.ay);
-        myFile.println(" mg ");
-        myFile.println("Z-acceleration: "); myFile.println(1000*myIMU.az);
-        myFile.println(" mg ");
+        Serial.print("X-acceleration: "); Serial.print(1000*myIMU.ax);
+        Serial.print(" mg ");
+        Serial.print("Y-acceleration: "); Serial.print(1000*myIMU.ay);
+        Serial.print(" mg ");
+        Serial.print("Z-acceleration: "); Serial.print(1000*myIMU.az);
+        Serial.println(" mg ");
 
         // Print gyro values in degree/sec
-        myFile.println("X-gyro rate: "); myFile.println(myIMU.gx, 3);
-        myFile.println(" degrees/sec ");
-        myFile.println("Y-gyro rate: "); myFile.println(myIMU.gy, 3);
-        myFile.println(" degrees/sec ");
-        myFile.println("Z-gyro rate: "); myFile.println(myIMU.gz, 3);
-        myFile.println(" degrees/sec");
+        Serial.print("X-gyro rate: "); Serial.print(myIMU.gx, 3);
+        Serial.print(" degrees/sec ");
+        Serial.print("Y-gyro rate: "); Serial.print(myIMU.gy, 3);
+        Serial.print(" degrees/sec ");
+        Serial.print("Z-gyro rate: "); Serial.print(myIMU.gz, 3);
+        Serial.println(" degrees/sec");
 
         // Print mag values in degree/sec
-        myFile.println("X-mag field: "); myFile.println(myIMU.mx);
-        myFile.println(" mG ");
-        myFile.println("Y-mag field: "); myFile.println(myIMU.my);
-        myFile.println(" mG ");
-        myFile.println("Z-mag field: "); myFile.println(myIMU.mz);
-        myFile.println(" mG");
+        Serial.print("X-mag field: "); Serial.print(myIMU.mx);
+        Serial.print(" mG ");
+        Serial.print("Y-mag field: "); Serial.print(myIMU.my);
+        Serial.print(" mG ");
+        Serial.print("Z-mag field: "); Serial.print(myIMU.mz);
+        Serial.println(" mG");
 
 //        myIMU.tempCount = myIMU.readTempData();  // Read the adc values
 //        // Temperature in degrees Centigrade
 //        myIMU.temperature = ((float) myIMU.tempCount) / 333.87 + 21.0;
 //        // Print temperature in degrees Centigrade
-//        myFile.println("Temperature is ");  myFile.println(myIMU.temperature, 1);
-//        myFile.println(" degrees C");
+//        Serial.print("Temperature is ");  Serial.print(myIMU.temperature, 1);
+//        Serial.println(" degrees C");
       }
 
       myIMU.count = millis();
@@ -227,25 +201,25 @@ void loop() {
     {
       if(SerialDebug)
       {
-        myFile.println("ax = "); myFile.println((int)1000*myIMU.ax);
-        myFile.println(" ay = "); myFile.println((int)1000*myIMU.ay);
-        myFile.println(" az = "); myFile.println((int)1000*myIMU.az);
-        myFile.println(" mg");
+        Serial.print("ax = "); Serial.print((int)1000*myIMU.ax);
+        Serial.print(" ay = "); Serial.print((int)1000*myIMU.ay);
+        Serial.print(" az = "); Serial.print((int)1000*myIMU.az);
+        Serial.println(" mg");
 
-        myFile.println("gx = "); myFile.println( myIMU.gx, 2);
-        myFile.println(" gy = "); myFile.println( myIMU.gy, 2);
-        myFile.println(" gz = "); myFile.println( myIMU.gz, 2);
-        myFile.println(" deg/s");
+        Serial.print("gx = "); Serial.print( myIMU.gx, 2);
+        Serial.print(" gy = "); Serial.print( myIMU.gy, 2);
+        Serial.print(" gz = "); Serial.print( myIMU.gz, 2);
+        Serial.println(" deg/s");
 
-        myFile.println("mx = "); myFile.println( (int)myIMU.mx );
-        myFile.println(" my = "); myFile.println( (int)myIMU.my );
-        myFile.println(" mz = "); myFile.println( (int)myIMU.mz );
-        myFile.println(" mG");
+        Serial.print("mx = "); Serial.print( (int)myIMU.mx );
+        Serial.print(" my = "); Serial.print( (int)myIMU.my );
+        Serial.print(" mz = "); Serial.print( (int)myIMU.mz );
+        Serial.println(" mG");
 
-        myFile.println("q0 = "); myFile.println(*getQ());
-        myFile.println(" qx = "); myFile.println(*(getQ() + 1));
-        myFile.println(" qy = "); myFile.println(*(getQ() + 2));
-        myFile.println(" qz = "); myFile.println(*(getQ() + 3));
+        Serial.print("q0 = "); Serial.print(*getQ());
+        Serial.print(" qx = "); Serial.print(*(getQ() + 1));
+        Serial.print(" qy = "); Serial.print(*(getQ() + 2));
+        Serial.print(" qz = "); Serial.println(*(getQ() + 3));
       }
 
 // Define output variables from updated quaternion---these are Tait-Bryan
@@ -285,23 +259,23 @@ void loop() {
 
       if(SerialDebug)
       {
-        myFile.println("Yaw, Pitch, Roll: ");
-        myFile.println(myIMU.yaw, 2);
-        myFile.println(", ");
-        myFile.println(myIMU.pitch, 2);
-        myFile.println(", ");
-        myFile.println(myIMU.roll, 2);
+        Serial.print("Yaw, Pitch, Roll: ");
+        Serial.print(myIMU.yaw, 2);
+        Serial.print(", ");
+        Serial.print(myIMU.pitch, 2);
+        Serial.print(", ");
+        Serial.println(myIMU.roll, 2);
 
-        myFile.println("rate = ");
-        myFile.println((float)myIMU.sumCount/myIMU.sum, 2);
-        myFile.println(" Hz");
+        Serial.print("rate = ");
+        Serial.print((float)myIMU.sumCount/myIMU.sum, 2);
+        Serial.println(" Hz");
       }
       myIMU.count = millis();
       myIMU.sumCount = 0;
       myIMU.sum = 0;
     } // if (myIMU.delt_t > 500)
   } // if (AHRS)
-  myFile.flush();
+
 }
 
 
