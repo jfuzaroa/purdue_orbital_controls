@@ -76,6 +76,8 @@ void loop() {
   dCorrection = gradient * dK;
   previous_error = error;
   controlActuator(getCorrections());
+
+//  Serial.println(analogRead(POTENTIOMETER_SIGNAL));
 }
 
 double getDesiredPosition() {
@@ -91,8 +93,8 @@ double getDesiredPosition() {
 //    Serial.print("Actuator Position: ");
 //    Serial.println(actuator_position);
 
-    Serial.print("Angle: ");
-    Serial.println((angle * (180/PI))-5); // SLIGHTLY INNACURATE!
+//    Serial.print("Angle: ");
+//    Serial.println((angle * (180/PI))-5); // SLIGHTLY INNACURATE!
     
     
     return throttle_feedback;
